@@ -1,0 +1,17 @@
+🧪 CLAUDE SYNC TEST
+
+If you can see this file in your VS Code, then Claude Projects sync is working!
+
+Created at: $(date)
+
+This means:
+✅ Changes I make in /mnt/project show up in your local repo
+✅ We can work directly without downloads
+
+If you SEE this file:
+- Reply "YES, I see the test file"
+- We'll set up automatic commits
+
+If you DON'T see this file:
+- Reply "NO, I don't see it"
+- We'll use the patch system instead

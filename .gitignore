@@ -1,0 +1,47 @@
+# Environment variables
+.env
+
+# Telegram session files
+*.session
+*.session-journal
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.venv
+
+# Logs
+*.log
+telegram_harvester.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+history.txt
+orders_out/*.json
+status_out/*.json
+!orders_out/.gitkeep
+!status_out/.gitkeep
+
+# Database
+*.db
+*.sqlite
+
+# Temporary files
+*.tmp
+*.temp
