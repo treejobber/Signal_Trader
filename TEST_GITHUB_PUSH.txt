@@ -1,0 +1,5 @@
+This is a test to verify Claude can push to GitHub.
+
+If you see this file in your GitHub repo, then it's working!
+
+Created at: $(date)
