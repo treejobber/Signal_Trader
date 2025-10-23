@@ -1,0 +1,72 @@
+# Telegram Channels Configuration
+# Add/remove channels here - the harvester will monitor all enabled channels
+
+channels:
+  # Channel 1: Sureshotfx Free Signals
+  - name: "Sureshotfx Free Signals"
+    username: "@Sureshotfx_Signals_Free"
+    enabled: true
+    auto_parse: true
+    auto_trade: false
+    parser_type: "standard"  # standard, goldtrader, custom
+    risk_per_trade: 1.0  # % of account per trade
+    instruments:
+      - XAUUSD
+      - GC
+      - ES
+    notes: "Main free signals channel"
+
+  # Channel 2: Example - Gold Trader Mo (disabled by default)
+  - name: "Gold Trader Mo"
+    username: "@GoldTraderMo"
+    enabled: false
+    auto_parse: true
+    auto_trade: false
+    parser_type: "goldtrader"
+    risk_per_trade: 0.5
+    instruments:
+      - XAUUSD
+    notes: "Premium gold signals"
+
+  # Channel 3: Example - Add your channels here
+  - name: "My Custom Channel"
+    username: "@YourChannelHere"
+    enabled: false
+    auto_parse: true
+    auto_trade: false
+    parser_type: "standard"
+    risk_per_trade: 1.0
+    instruments:
+      - XAUUSD
+      - GC
+    notes: "Add description here"
+
+# Global Settings
+global:
+  # NinjaTrader Configuration
+  ninjatrader:
+    base_path: "C:\\MCPServer"
+    account: "Sim101"
+    
+  # Risk Management
+  risk:
+    max_daily_risk: 5.0  # Maximum % risk per day across all channels
+    max_positions: 3  # Maximum simultaneous positions
+    max_per_instrument: 1  # Max positions per instrument
+    
+  # Notifications
+  notifications:
+    telegram_alerts: true
+    email_alerts: false
+    discord_webhook: ""
+    
+  # Logging
+  logging:
+    level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+    keep_days: 30  # Days to keep old logs
+    
+  # Session Configuration
+  session:
+    name: "TelegramReader"
+    reconnect_attempts: 5
+    reconnect_delay: 30  # seconds

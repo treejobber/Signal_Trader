@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signal Trader Pro - Dashboard</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+        
+        .stat-value {
+            font-size: 42px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-indicator.online {
+            background: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .section {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+        
+        h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 15px;
+        }
+        
+        .channel-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .channel-card {
+            background: linear-gradient(135deg, #16213e 0%, #1e293b 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid #4caf50;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .channel-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .channel-card.disabled {
+            border-left-color: #666;
+            opacity: 0.6;
+        }
+        
+        .channel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .channel-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .channel-username {
+            color: #667eea;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+        
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-badge.active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+        
+        .status-badge.inactive {
+            background: #4b5563;
+            color: #d1d5db;
+        }
+        
+        .channel-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #2d3748;
+        }
+        
+        .mini-stat {
+            text-align: center;
+        }
+        
+        .mini-stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 4px;
+        }
+        
+        .mini-stat-label {
+            font-size: 11px;
+            color: #9ca3af;
+            text-transform: uppercase;
+        }
+        
+        .instruments {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        
+        .instrument-tag {
+            background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #d1d5db;
+            font-weight: 600;
+        }
+        
+        .signal-item {
+            background: linear-gradient(135deg, #16213e 0%, #1e293b 100%);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .signal-time {
+            color: #9ca3af;
+            font-size: 11px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .signal-channel {
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .signal-text {
+            color: #e5e7eb;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .modal-title {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 32px;
+            color: #9ca3af;
+            cursor: pointer;
+        }
+        
+        .close-btn:hover {
+            color: #fff;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #d1d5db;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: #16213e;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            color: #e5e7eb;
+            font-size: 14px;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .toggle input[type="checkbox"] {
+            width: 48px;
+            height: 24px;
+            appearance: none;
+            background: #374151;
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .toggle input[type="checkbox"]:checked {
+            background: #4caf50;
+        }
+        
+        .toggle input[type="checkbox"]::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+        
+        .toggle input[type="checkbox"]:checked::before {
+            transform: translateX(24px);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+        
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 30px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>📡 Signal Trader Pro</h1>
+                <div class="subtitle">
+                    <span class="status-indicator online"></span>
+                    Multi-Channel Real-Time Monitor
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openAddChannelModal()">
+                    ➕ Add Channel
+                </button>
+                <button class="btn btn-secondary" onclick="refreshData()">
+                    🔄 Refresh
+                </button>
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="total-channels">0</div>
+                <div class="stat-label">Total Channels</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="active-channels">0</div>
+                <div class="stat-label">Active</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="total-messages">0</div>
+                <div class="stat-label">Messages Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="uptime">00:00:00</div>
+                <div class="stat-label">Uptime</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="section">
+                <h2>📺 Channels</h2>
+                <div id="channels-list" class="channel-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📡</div>
+                        <p>Loading channels...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📊 Recent Signals</h2>
+                <div id="signals-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📈</div>
+                        <p>No signals yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            Signal Trader Pro v2.0 | Multi-Channel Edition | Built with ❤️ by Claude
+        </footer>
+    </div>
+
+    <!-- Add Channel Modal -->
+    <div id="addChannelModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Channel</h3>
+                <button class="close-btn" onclick="closeAddChannelModal()">×</button>
+            </div>
+            <form id="addChannelForm" onsubmit="addChannel(event)">
+                <div class="form-group">
+                    <label>Channel Name *</label>
+                    <input type="text" name="name" required placeholder="e.g., Gold Signals VIP">
+                </div>
+                <div class="form-group">
+                    <label>Username *</label>
+                    <input type="text" name="username" required placeholder="@ChannelUsername">
+                </div>
+                <div class="form-group">
+                    <label class="toggle">
+                        <input type="checkbox" name="enabled" checked>
+                        <span>Enable Monitoring</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Parser Type</label>
+                    <select name="parser_type">
+                        <option value="standard">Standard</option>
+                        <option value="goldtrader">Gold Trader</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Risk Per Trade (%)</label>
+                    <input type="number" name="risk_per_trade" step="0.1" value="1.0" min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Instruments (comma-separated)</label>
+                    <input type="text" name="instruments" placeholder="XAUUSD, GC, ES" value="XAUUSD">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea name="notes" rows="3" placeholder="Optional notes about this channel"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Add Channel</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        const socket = io('http://localhost:5000');
+
+        // WebSocket event handlers
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('stats_update', (data) => {
+            updateDashboard(data);
+        });
+
+        // Load initial data
+        async function loadData() {
+            try {
+                const [channelsRes, statsRes, signalsRes] = await Promise.all([
+                    fetch(`${API_BASE}/channels`),
+                    fetch(`${API_BASE}/stats`),
+                    fetch(`${API_BASE}/signals/recent?limit=10`)
+                ]);
+
+                const channels = await channelsRes.json();
+                const stats = await statsRes.json();
+                const signals = await signalsRes.json();
+
+                displayChannels(channels.channels || []);
+                updateStats(stats.stats || {});
+                displaySignals(signals.signals || []);
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        function updateDashboard(data) {
+            if (data.system_stats) {
+                updateStats(data.system_stats);
+            }
+            if (data.recent_signals) {
+                displaySignals(data.recent_signals);
+            }
+        }
+
+        function displayChannels(channels) {
+            const container = document.getElementById('channels-list');
+            
+            if (channels.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📡</div>
+                        <p>No channels configured</p>
+                        <button class="btn btn-primary" onclick="openAddChannelModal()">Add Your First Channel</button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = channels.map(channel => {
+                const stats = channel.stats || {};
+                const instruments = channel.instruments || [];
+                
+                return `
+                    <div class="channel-card ${channel.enabled ? '' : 'disabled'}">
+                        <div class="channel-header">
+                            <div class="channel-name">${channel.name}</div>
+                            <span class="status-badge ${channel.enabled ? 'active' : 'inactive'}">
+                                ${channel.enabled ? '● ACTIVE' : '○ DISABLED'}
+                            </span>
+                        </div>
+                        <div class="channel-username">${channel.username}</div>
+                        <div class="instruments">
+                            ${instruments.map(inst => `<span class="instrument-tag">${inst}</span>`).join('')}
+                        </div>
+                        <div class="channel-stats">
+                            <div class="mini-stat">
+                                <div class="mini-stat-value">${stats.messages_today || 0}</div>
+                                <div class="mini-stat-label">Today</div>
+                            </div>
+                            <div class="mini-stat">
+                                <div class="mini-stat-value">${stats.last_message || 'Never'}</div>
+                                <div class="mini-stat-label">Last Message</div>
+                            </div>
+                            <div class="mini-stat">
+                                <div class="mini-stat-value">${channel.parser_type || 'standard'}</div>
+                                <div class="mini-stat-label">Parser</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Update channel count
+            document.getElementById('total-channels').textContent = channels.length;
+            document.getElementById('active-channels').textContent = 
+                channels.filter(ch => ch.enabled).length;
+        }
+
+        function displaySignals(signals) {
+            const container = document.getElementById('signals-list');
+            
+            if (signals.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📈</div>
+                        <p>No signals yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = signals.map(signal => {
+                const time = new Date(signal.timestamp).toLocaleString();
+                return `
+                    <div class="signal-item">
+                        <div class="signal-time">
+                            <span>${time}</span>
+                            <span class="signal-channel">${signal.channel}</span>
+                        </div>
+                        <div class="signal-text">${signal.message}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateStats(stats) {
+            if (stats.total_messages !== undefined) {
+                document.getElementById('total-messages').textContent = stats.total_messages;
+            }
+            if (stats.uptime) {
+                document.getElementById('uptime').textContent = stats.uptime;
+            }
+        }
+
+        // Modal functions
+        function openAddChannelModal() {
+            document.getElementById('addChannelModal').classList.add('active');
+        }
+
+        function closeAddChannelModal() {
+            document.getElementById('addChannelModal').classList.remove('active');
+            document.getElementById('addChannelForm').reset();
+        }
+
+        async function addChannel(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const data = {
+                name: formData.get('name'),
+                username: formData.get('username'),
+                enabled: formData.get('enabled') === 'on',
+                parser_type: formData.get('parser_type'),
+                risk_per_trade: parseFloat(formData.get('risk_per_trade')),
+                instruments: formData.get('instruments').split(',').map(s => s.trim()),
+                notes: formData.get('notes'),
+                auto_parse: true,
+                auto_trade: false
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/channels`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    closeAddChannelModal();
+                    loadData();
+                    alert('Channel added successfully! Restart the harvester to monitor this channel.');
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Failed to add channel: ' + error.message);
+            }
+        }
+
+        function refreshData() {
+            loadData();
+        }
+
+        // Load on page load
+        loadData();
+        setInterval(loadData, 10000); // Refresh every 10 seconds
+    </script>
+</body>
+</html>
